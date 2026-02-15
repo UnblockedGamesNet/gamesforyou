@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+    <meta charset="utf-8">
+    <title>Axiom | Noah R. Signature</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+
+<style>
+:root {
+    --win-accent: #00f2ff;
+    --glass: rgba(10, 10, 15, 0.95);
+    --dock-size: 28px;
+}
+
+.theme-ruby { --win-accent: #ff2d55; }
+.theme-emerald { --win-accent: #00ff88; }
+.theme-gold { --win-accent: #ffcc00; }
+
+* { box-sizing: border-box; cursor: default; user-select: none; }
+body, html { margin: 0; padding: 0; width: 100vw; height: 100vh; font-family: 'Inter', sans-serif; overflow: hidden; background: #000; color: #fff; }
+
+/* --- BRANDING SPLASH --- */
+#splash {
+    position: fixed; inset: 0; background: #000; z-index: 30000;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    transition: 1.5s ease;
+}
+.splash-logo { font-family: 'Orbitron'; font-size: 50px; color: var(--win-accent); letter-spacing: 10px; animation: pulse 2s infinite; }
+.splash-sub { font-size: 12px; margin-top: 20px; letter-spacing: 5px; opacity: 0.6; }
+
+/* --- BACKGROUND & CORE UI --- */
+#desktop-wallpaper { position: fixed; inset: 0; background: radial-gradient(circle at center, #0a0a15 0%, #000 100%); z-index: 1; transition: 1s; }
+canvas { position: fixed; inset: 0; z-index: 2; pointer-events: none; }
+.noah-watermark { position: fixed; bottom: 85px; left: 50%; transform: translateX(-50%); font-family: 'Orbitron'; font-size: 14px; opacity: 0.2; letter-spacing: 4px; z-index: 5; pointer-events: none; }
+
+/* --- STATUS BAR --- */
+#status-bar {
+    position: fixed; top: 0; width: 100%; height: 35px; background: rgba(0,0,0,0.8);
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0 20px; font-size: 11px; z-index: 10000; border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.bar-brand { font-family: 'Orbitron'; color: var(--win-accent); font-weight: bold; }
+
+/* --- DOCK --- */
+.axiom-dock {
+    position: absolute; bottom: 25px; left: 50%; transform: translateX(-50%);
+    background: rgba(0,0,0,0.85); backdrop-filter: blur(20px);
+    padding: 10px 25px; border-radius: 20px; display: flex; gap: 20px;
+    border: 1px solid rgba(255,255,255,0.1); z-index: 100;
+}
+.dock-item { font-size: var(--dock-size); transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); cursor: pointer; }
+.dock-item:hover { transform: translateY(-12px) scale(1.3); filter: drop-shadow(0 0 10px var(--win-accent)); }
+
+/* --- WINDOWS --- */
+.window {
+    position: fixed; inset: 0; width: 100vw; height: 100vh; background: var(--glass);
+    z-index: 15000; display: none; flex-direction: column;
+    opacity: 0; transform: scale(0.95); transition: 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+.window.active { display: flex; opacity: 1; transform: scale(1); }
+.win-header { background: #000; padding: 10px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--win-accent); }
+.exit-btn { background: var(--win-accent); color: #000; border: none; padding: 5px 15px; border-radius: 3px; font-weight: bold; cursor: pointer; }
+
+@keyframes pulse { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
+</style>
+</head>
+<body class="theme-obsidian">
+
+<div id="splash">
+    <div class="splash-logo">AXIOM</div>
+    <div class="splash-sub">A SYSTEM BY NOAH R.</div>
+</div>
+
+<div id="status-bar">
+    <div class="bar-brand">NOAH R. // SIGNATURE</div>
+    <div style="flex:1; text-align:center;">
+        <input id="omni-search" placeholder="SEARCH GOOGLE" onkeydown="if(event.key==='Enter') searchGoogle()" style="background:rgba(255,255,255,0.05); border:1px solid #333; color:#fff; width:300px; text-align:center; padding:3px; border-radius:4px; font-size:10px;">
+    </div>
+    <div id="clock">00:00</div>
+</div>
+
+<div id="desktop-wallpaper"></div>
+<canvas id="starfield"></canvas>
+<div class="noah-watermark">ENGINEERED BY NOAH R</div>
+
+<div class="axiom-dock">
+    <div class="dock-item" onclick="openApps()">📁</div>
+    <div class="dock-item" onclick="openProxy()">🌍</div>
+    <div class="dock-item" onclick="openSettings()">⚙️</div>
+</div>
+
+<div id="win-template" class="window">
+    <div class="win-header">
+        <span id="win-title" style="font-family:'Orbitron'; font-size:10px;">CORE</span>
+        <button class="exit-btn" onclick="closeWin()">EXIT</button>
+    </div>
+    <div id="win-content" style="flex:1;"></div>
+</div>
+
+<script>
+const apps = [
+    { n: 'NoGuardian', u: 'http://nogaurdian.space', i: '🛡️' },
+    { n: 'OSI Boarding', u: 'https://policies.osiadaczabogados.cl/onboarding/', i: '📋' },
+    { n: 'Math Sheets', u: 'http://math-worksheets.thuexetaxi.com/', i: '📓' },
+    { n: 'Elite Gamez', u: 'https://elite-gamez.github.io/', i: '🚀' },
+    { n: 'Slope', u: 'https://kdata1.com/2020/05/slope/', i: '🎾' },
+    { n: 'SAIL Edu', u: 'https://sailforeducation.org/', i: '🎓' },
+    { n: 'Backend Hub', u: 'https://www.backend.152.53.38.9.80.86.nip.io/', i: '⚙️' },
+    { n: 'World Mono', u: 'https://world.monotribut.ar', i: '🌎' },
+    { n: 'MathHW', u: 'https://mathhw.chiaowang.com/', i: '📝' },
+    { n: 'Platinum', u: 'https://platinumunblocker.com/@', i: '💎' },
+    { n: 'Drift Boss', u: 'https://driftboss.io/drift-boss', i: '🏎️' }
+];
+
+window.onload = () => {
+    setTimeout(() => {
+        document.getElementById('splash').style.opacity = '0';
+        setTimeout(() => document.getElementById('splash').style.display = 'none', 1500);
+    }, 2000);
+    initStars();
+    setInterval(() => {
+        document.getElementById('clock').innerText = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    }, 1000);
+};
+
+function openApps() {
+    const w = document.getElementById('win-template');
+    document.getElementById('win-title').innerText = "NOAH'S_APPS";
+    let h = `<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(140px,1fr)); gap:20px; padding:60px;">`;
+    apps.forEach(a => {
+        h += `<div onclick="launch('${a.n}','${a.u}')" style="background:rgba(255,255,255,0.03); padding:25px; border-radius:15px; text-align:center; cursor:pointer; border:1px solid transparent;">
+                <div style="font-size:45px;">${a.i}</div>
+                <div style="font-size:10px; font-weight:bold; margin-top:10px;">${a.n}</div>
+              </div>`;
+    });
+    document.getElementById('win-content').innerHTML = h + `</div>`;
+    w.style.display='flex'; setTimeout(()=>w.classList.add('active'),10);
+}
+
+function openProxy() {
+    const w = document.getElementById('win-template');
+    document.getElementById('win-title').innerText = "AXIOM_BROWSER";
+    document.getElementById('win-content').innerHTML = `<iframe src="https://www.google.com/search?igu=1" style="width:100%; height:100%; border:none; background:white;"></iframe>`;
+    w.style.display='flex'; setTimeout(()=>w.classList.add('active'),10);
+}
+
+function searchGoogle() {
+    const q = document.getElementById('omni-search').value;
+    launch('GOOGLE', `https://www.google.com/search?igu=1&q=${encodeURIComponent(q)}`);
+}
+
+function launch(n, u) {
+    const w = document.getElementById('win-template');
+    document.getElementById('win-title').innerText = n.toUpperCase();
+    document.getElementById('win-content').innerHTML = `<iframe src="${u}" style="width:100%; height:100%; border:none; background:white;"></iframe>`;
+    w.style.display='flex'; setTimeout(()=>w.classList.add('active'),10);
+}
+
+function openSettings() {
+    const w = document.getElementById('win-template');
+    document.getElementById('win-title').innerText = "SYSTEM_PREFERENCES";
+    document.getElementById('win-content').innerHTML = `
+        <div style="padding:60px; max-width:700px; margin:auto;">
+            <h3 style="color:var(--win-accent); font-family:'Orbitron';">IDENTITY</h3>
+            <p style="font-size:12px; opacity:0.6;">System Hardware: Axiom Noah-Core v2.0</p>
+            <hr style="opacity:0.1; margin:20px 0;">
+            <h3>APPEARANCE</h3>
+            <div style="display:flex; gap:10px; margin-bottom:30px;">
+                <button onclick="document.body.className='theme-obsidian'" style="flex:1; padding:10px; background:#00f2ff; color:#000; border:none; cursor:pointer;">CYAN</button>
+                <button onclick="document.body.className='theme-ruby'" style="flex:1; padding:10px; background:#ff2d55; color:#fff; border:none; cursor:pointer;">RUBY</button>
+                <button onclick="document.body.className='theme-emerald'" style="flex:1; padding:10px; background:#00ff88; color:#000; border:none; cursor:pointer;">EMERALD</button>
+                <button onclick="document.body.className='theme-gold'" style="flex:1; padding:10px; background:#ffcc00; color:#000; border:none; cursor:pointer;">GOLD</button>
+            </div>
+            <h3>WINDOW TRANSPARENCY</h3>
+            <input type="range" min="0.5" max="1" step="0.05" oninput="document.documentElement.style.setProperty('--glass', 'rgba(10,10,15,'+this.value+')')" style="width:100%;">
+            <br><br>
+            <h3>DOCK ICON SIZE</h3>
+            <input type="range" min="20" max="50" step="2" oninput="document.documentElement.style.setProperty('--dock-size', this.value+'px')" style="width:100%;">
+        </div>`;
+    w.style.display='flex'; setTimeout(()=>w.classList.add('active'),10);
+}
+
+function closeWin() {
+    const w = document.getElementById('win-template');
+    w.classList.remove('active');
+    setTimeout(()=> w.style.display='none', 400);
+}
+
+function initStars() {
+    const c=document.getElementById('starfield'), x=c.getContext('2d');
+    c.width=window.innerWidth; c.height=window.innerHeight;
+    const s=Array.from({length:200},()=>({x:Math.random()*c.width,y:Math.random()*c.height,v:Math.random()*0.5}));
+    function a(){ x.clearRect(0,0,c.width,c.height); x.fillStyle="white"; s.forEach(p=>{ x.fillRect(p.x,p.y,1,1); p.y-=p.v; if(p.y<0) p.y=c.height; }); requestAnimationFrame(a); }
+    a();
+}
+</script>
+</body>
+</html>
